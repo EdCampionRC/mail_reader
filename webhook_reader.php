@@ -30,34 +30,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST')
 {
 	$data = file_get_contents('php://input');
     $post_data =  json_decode($data);
-	$prop_link_beg = strpos($post_data->$tenant_message ,"Link:");
+	$prop_link_beg = strpos($post_data->tenant_message ,"Link:");
 	$prop_link_beg += 25;//Link: www.daft.ie/id/21451728 only extract digits
-    $prop_link_end = strpos($post_data->$tenant_message,"\n",$prop_link_beg);
-    $prop_link = substr($post_data->$tenant_message ,$prop_link_beg,($prop_link_end - $prop_link_beg));
+    $prop_link_end = strpos($post_data->tenant_message,"\n",$prop_link_beg);
+    $prop_link = substr($post_data->tenant_message ,$prop_link_beg,($prop_link_end - $prop_link_beg));
     $prop_link = trim($prop_link);
-	$msg = "Tenant Email: ".$post_data->$tenant_email . " / ".
+	$msg = "Tenant Email: ".$post_data->tenant_email . " / ".
     "Property: ". $prop_link. "\nPlease fill out your profile";
    
-   	$con = mysqli_connect($server, $user, $pass, $db);
-    $result = mysqli_query($con, "SELECT a.name,a.email FROM agency a
-    INNER JOIN tenant_search_property tsp ON tsp.agency_id = a.id
-    WHERE tsp.daft_url LIKE '%".substr($prop_link,1)."%'");
-     
-     while($row = mysqli_fetch_array($result))
+    if(count($prop_link) > 0)
     {
-      $msg .= "\nAgency: ".$row["name"] ."\nAgency Mail: " .$row["email"]  ;
-    }
+	   	$con = mysqli_connect($server, $user, $pass, $db);
+	    $result = mysqli_query($con, "SELECT a.name,a.email FROM agency a
+	    INNER JOIN tenant_search_property tsp ON tsp.agency_id = a.id
+	    WHERE tsp.daft_url LIKE '%".substr($prop_link,1)."%'");
+	     
+	     while($row = mysqli_fetch_array($result))
+	    {
+	      $msg .= "\nAgency: ".$row["name"] ."\nAgency Mail: " .$row["email"]  ;
+	    }
 
-     $mail->Body= $msg;
+	     $mail->Body= $msg;
 
-    if(!$mail->Send()) {
-      //echo "Mailer Error: " . $mail->ErrorInfo;
-    }
-    else {
-      //echo "Message sent!";
-      $success = true;
-    }
-	mysqli_close($con);
+	    if(!$mail->Send()) {
+	      //echo "Mailer Error: " . $mail->ErrorInfo;
+	    }
+	    else {
+	      //echo "Message sent!";
+	      $success = true;
+	    }
+	    mysqli_close($con);
+	}
 }
 	
 if($success)
